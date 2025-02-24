@@ -1,14 +1,23 @@
 {
     "name": "com.fixer33.core",
     "rootNamespace": "Core",
-    "references": [],
+    "references": [
+        "Unity.Services.Core",
+        "Zenject"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": false,
+    "overrideReferences": true,
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.services.core",
+            "expression": "1.13.0",
+            "define": "USE_UNITY_SERVICES"
+        }
+    ],
     "noEngineReferences": false
 }

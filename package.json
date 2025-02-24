@@ -4,6 +4,10 @@
   "displayName": "Core",
   "description": "Core package for other packages",
   "unity": "6000.0",
+  "dependencies": {
+    "com.unity.test-framework": "1.4.6",
+    "com.fixer33.extenject-fork": "https://github.com/Fixer33/ZenjectPackage.git"
+  },
   "author": {
     "name": "Fixer33",
     "email": "fsfixer33@gmail.com",
