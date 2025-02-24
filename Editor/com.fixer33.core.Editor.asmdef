@@ -1,0 +1,18 @@
+{
+    "name": "com.fixer33.core.Editor",
+    "rootNamespace": "Core.Editor",
+    "references": [
+        "com.fixer33.core"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

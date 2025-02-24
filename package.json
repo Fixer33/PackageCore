@@ -1,0 +1,14 @@
+{
+  "name": "com.fixer33.core",
+  "version": "1.0.0",
+  "displayName": "Core",
+  "description": "Core package for other packages",
+  "unity": "6000.0",
+  "author": {
+    "name": "Fixer33",
+    "email": "fsfixer33@gmail.com",
+    "url": "https://github.com/Fixer33"
+  },
+  "samples": [
+  ]
+}
