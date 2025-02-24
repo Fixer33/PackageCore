@@ -6,7 +6,7 @@
   "unity": "6000.0",
   "dependencies": {
     "com.unity.test-framework": "1.4.6",
-    "com.fixer33.extenject-fork": "git+https://github.com/Fixer33/ZenjectPackage.git"
+    "com.fixer33.extenject-fork": "1.0.0"
   },
   "author": {
     "name": "Fixer33",
