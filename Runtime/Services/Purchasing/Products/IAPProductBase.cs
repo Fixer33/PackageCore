@@ -1,5 +1,5 @@
 using System;
-using Services;
+using Core.Utilities;
 using UnityEngine;
 
 namespace Core.Services.Purchasing.Products

@@ -5,13 +5,16 @@
         "Unity.Services.Core",
         "UnityEngine.Purchasing",
         "UnityEngine.Purchasing.Stores",
-        "Unity.Services.Analytics"
+        "Unity.Services.Analytics",
+        "Zenject"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": true,
-    "precompiledReferences": [],
+    "precompiledReferences": [
+        "Zenject-usage.dll"
+    ],
     "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [
@@ -29,6 +32,11 @@
             "name": "com.unity.services.analytics",
             "expression": "6.0.2",
             "define": "USE_UNITY_ANALYTICS"
+        },
+        {
+            "name": "com.fixer33.extenject-fork",
+            "expression": "6.0.2",
+            "define": "USE_EXTENJECT"
         }
     ],
     "noEngineReferences": false

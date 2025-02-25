@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Services
+namespace Core.Utilities
 {
     [Serializable]
     public struct PlatformDependentReference<T>

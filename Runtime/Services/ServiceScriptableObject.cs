@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Core
+namespace Core.Services
 {
     [CreateAssetMenu(fileName = "FILENAME", menuName = "MENUNAME", order = 0)]
     public abstract class ServiceScriptableObject : ScriptableObject, IService

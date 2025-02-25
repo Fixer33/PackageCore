@@ -14,5 +14,15 @@
     "url": "https://github.com/Fixer33"
   },
   "samples": [
+    {
+      "displayName": "UnityIAP Validation",
+      "description": "Import this package after creating Validator classes for Unity IAP",
+      "path": "Samples~/UnityIAP Validation"
+    },
+    {
+      "displayName": "Samsung IAP",
+      "description": "Import for Android files needed to make the build. Also, check the documentation on how to use those files",
+      "path": "Samples~/Samsung IAP"
+    }
   ]
 }

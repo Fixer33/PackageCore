@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Utilities
+namespace Core.Utilities
 {
     public class Singleton<T> where T : new()
     {
