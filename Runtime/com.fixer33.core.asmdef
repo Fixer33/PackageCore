@@ -3,7 +3,8 @@
     "rootNamespace": "Core",
     "references": [
         "Unity.Services.Core",
-        "Zenject"
+        "UnityEngine.Purchasing",
+        "UnityEngine.Purchasing.Stores"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -17,6 +18,11 @@
             "name": "com.unity.services.core",
             "expression": "1.13.0",
             "define": "USE_UNITY_SERVICES"
+        },
+        {
+            "name": "com.unity.purchasing",
+            "expression": "4.12.2",
+            "define": "USE_UNITY_IAP"
         }
     ],
     "noEngineReferences": false
