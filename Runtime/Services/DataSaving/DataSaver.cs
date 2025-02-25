@@ -9,10 +9,9 @@ using UnityEngine;
 
 namespace Core.Services.DataSaving
 {
-    public abstract class DataSaver : ServiceBase
+    public abstract class DataSaver : ServiceScriptableObject
     {
         public static bool IsReady { get; private set; }
-        public override bool IsServiceInitialized { get; protected set; }
 
         private static DataSaver _instance;
         private DataSaverData _data;
@@ -22,8 +21,8 @@ namespace Core.Services.DataSaving
             if (_instance != null)
             {
                 throw new Exception($"Trying to initialize second instance of DataSaver!\n " +
-                                    $"Already active: {_instance.gameObject.name} on scene {_instance.gameObject.scene}\n " +
-                                    $"Trying to init: {gameObject.name} on scene {gameObject.scene}");
+                                    $"Already active: {_instance.name}\n " +
+                                    $"Trying to init: {name}");
             }
 
             _instance = this;

@@ -7,7 +7,7 @@ using System;
 using Core.Services.Purchasing;
 using UnityEngine;
 
-namespace Core
+namespace Core.Services.Ads
 {
     // ReSharper disable once InconsistentNaming
     public abstract class ADS : ServiceScriptableObject

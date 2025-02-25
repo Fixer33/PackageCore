@@ -4,7 +4,8 @@
     "references": [
         "Unity.Services.Core",
         "UnityEngine.Purchasing",
-        "UnityEngine.Purchasing.Stores"
+        "UnityEngine.Purchasing.Stores",
+        "Unity.Services.Analytics"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -23,6 +24,11 @@
             "name": "com.unity.purchasing",
             "expression": "4.12.2",
             "define": "USE_UNITY_IAP"
+        },
+        {
+            "name": "com.unity.services.analytics",
+            "expression": "6.0.2",
+            "define": "USE_UNITY_ANALYTICS"
         }
     ],
     "noEngineReferences": false
