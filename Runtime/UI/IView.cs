@@ -13,20 +13,20 @@ namespace UI.Core
         }
     }
     
-    public interface IScreenView
+    public interface IView
     {
         public event EventHandler<ScreenViewVisibilityArgs> VisibilityChanged;
         public bool IsInHierarchy { get; }
         public GameObject GameObject { get; }
         protected bool IsObjectAlive { get; }
 
-        public void Show(Action onComplete = null, Action onHide = null, IScreenViewData data = null);
+        public void Show(Action onComplete = null, Action onHide = null, IViewData data = null);
         public void Hide(Action onComplete = null);
-        public void ShowInstant(IScreenViewData data = null);
+        public void ShowInstant(IViewData data = null);
         public void HideInstant();
         public bool IsVisible();
 
-        public static bool IsAlive(IScreenView view)
+        public static bool IsAlive(IView view)
         {
             return view is { IsObjectAlive: true };
         }
@@ -35,9 +35,9 @@ namespace UI.Core
     // ReSharper disable once InconsistentNaming
     public static class IScreenViewExtensions
     {
-        public static bool IsAlive(this IScreenView screenView)
+        public static bool IsAlive(this IView screenView)
         {
-            return IScreenView.IsAlive(screenView);
+            return IView.IsAlive(screenView);
         }
     }
 }

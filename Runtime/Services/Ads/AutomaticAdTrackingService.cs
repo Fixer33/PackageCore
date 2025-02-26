@@ -12,7 +12,7 @@ namespace Core.Services.Ads
     {
         private static readonly List<AutomaticAdRequest> _requestsToRegisterOnInit = new();
         private static AutomaticAdTrackingService _instance;
-        private static IScreenView _paywall;
+        private static IView _paywall;
 
         [SerializeField] private bool _runAdOnInitialize;
         [SerializeField] private AutomaticAdCallData[] _primarySequence;
@@ -115,7 +115,7 @@ namespace Core.Services.Ads
             }
         }
 
-        public static void RegisterPaywall(IScreenView paywall)
+        public static void RegisterPaywall(IView paywall)
         {
             if (paywall.IsAlive() == false)
                 return;
