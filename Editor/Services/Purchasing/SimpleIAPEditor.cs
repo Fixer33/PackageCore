@@ -12,8 +12,9 @@ namespace Core.Editor.Services.Purchasing
             EditorGUILayout.HelpBox("No SimpleIAP imported!", MessageType.Warning);
             EditorGUILayout.Space();
             return;      
-#endif
+#else
             base.OnInspectorGUI();
+#endif
         }
     }
 }

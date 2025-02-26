@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Core.Services.Purchasing;
 using Core.Utilities;
-using UI.Core;
+using UI;
 using UnityEngine;
 
 namespace Core.Services.Ads

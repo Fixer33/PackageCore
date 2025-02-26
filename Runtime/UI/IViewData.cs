@@ -1,4 +1,4 @@
-namespace UI.Core
+namespace UI
 {
     public interface IViewData
     {

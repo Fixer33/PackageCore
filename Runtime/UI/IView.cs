@@ -1,13 +1,13 @@
 using System;
 using UnityEngine;
 
-namespace UI.Core
+namespace UI
 {
-    public class ScreenViewVisibilityArgs : EventArgs
+    public class ViewVisibilityArgs : EventArgs
     {
         public bool IsVisible { get; private set; }
 
-        public ScreenViewVisibilityArgs(bool isVisible)
+        public ViewVisibilityArgs(bool isVisible)
         {
             IsVisible = isVisible;
         }
@@ -15,7 +15,7 @@ namespace UI.Core
     
     public interface IView
     {
-        public event EventHandler<ScreenViewVisibilityArgs> VisibilityChanged;
+        public event EventHandler<ViewVisibilityArgs> VisibilityChanged;
         public bool IsInHierarchy { get; }
         public GameObject GameObject { get; }
         protected bool IsObjectAlive { get; }
