@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Core.Services.DataSaving.Concrete.PP
 {
-    [CreateAssetMenu(fileName = "Consumable", menuName = "Services/DataSaving/Player Prefs", order = 0)]
+    [CreateAssetMenu(fileName = "Player Prefs saver", menuName = "Services/DataSaving/Player Prefs", order = 0)]
     public class PlayerPrefsSaver : DataSaver
     {
         private const string KEY = "StoredData";

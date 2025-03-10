@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Core.Services.Ads
 {
-    [CreateAssetMenu(fileName = "Consumable", menuName = "Services/Ads/Applovin", order = 0)]
+    [CreateAssetMenu(fileName = "Applovin", menuName = "Services/Ads/Applovin", order = 0)]
     public class ApplovinAds : ADS
     {
         [SerializeField, TextArea] private string _sdkKey;

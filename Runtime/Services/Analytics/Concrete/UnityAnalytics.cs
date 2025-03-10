@@ -9,7 +9,7 @@ using Event = Unity.Services.Analytics.Event;
 
 namespace Core.Services.Analytics.Concrete
 {
-    [CreateAssetMenu(fileName = "Consumable", menuName = "Services/Ads/Unity analytics", order = 0)]
+    [CreateAssetMenu(fileName = "Unity analytics", menuName = "Services/Ads/Unity analytics", order = 0)]
     public class UnityAnalytics : Analytics
     {
 #if USE_UNITY_ANALYTICS

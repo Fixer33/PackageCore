@@ -8,19 +8,21 @@ using UnityEngine;
 
 namespace Core.Services.DataSaving.Concrete.SecurePP
 {
-    [CreateAssetMenu(fileName = "Consumable", menuName = "Services/DataSaving/Player Prefs Encrypted", order = 0)]
+    [CreateAssetMenu(fileName = "Encrypted Player Prefs saver", menuName = "Services/DataSaving/Player Prefs Encrypted", order = 0)]
     public class PlayerPrefsEncrypted : DataSaver
     {
-        public static readonly string ENCRYPTION_KEY = Application.identifier+nameof(PlayerPrefsEncrypted)+new string('+', 32)[..32];
-        public static readonly string ENCRYPTION_IV = Application.identifier+nameof(PlayerPrefsEncrypted)[..16];
-        
         private const string KEY = "StoredData";
 
+        private string _encryptionKey;
+        private string _encryptionIv;
         private StringEncryptor _encryptor;
 
         protected override UnifiedTask Init()
         {
-            _encryptor = new StringEncryptor(ENCRYPTION_KEY, ENCRYPTION_IV);
+            _encryptionKey = (Application.identifier+nameof(PlayerPrefsEncrypted)+new string('+', 32))[..32];
+            _encryptionIv = (Application.identifier+nameof(PlayerPrefsEncrypted)+new string('+', 16))[..16];
+            
+            _encryptor = new StringEncryptor(_encryptionKey, _encryptionIv);
             return UnifiedTask.CompletedTask;
         }
 
