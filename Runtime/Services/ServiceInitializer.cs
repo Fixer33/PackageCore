@@ -6,7 +6,9 @@ using UnifiedTask = System.Threading.Tasks.Task;
 #endif
 using System;
 using System.Linq;
+#if USE_UNITY_SERVICES
 using Unity.Services.Core;
+#endif
 using UnityEngine;
 using Zenject;
 

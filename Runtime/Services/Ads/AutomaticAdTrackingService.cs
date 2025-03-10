@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Core.Services.Ads
 {
-    [CreateAssetMenu(fileName = "Consumable", menuName = "Services/Automatic ad tracking", order = 0)]
+    [CreateAssetMenu(fileName = "Automatic ad tracking", menuName = "Services/Automatic ad tracking", order = 0)]
     public class AutomaticAdTrackingService : ServiceScriptableObject
     {
         private static readonly List<AutomaticAdRequest> _requestsToRegisterOnInit = new();

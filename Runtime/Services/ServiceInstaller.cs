@@ -12,7 +12,7 @@ namespace Core.Services
         
         public override void InstallBindings()
         {
-            Container.BindInterfacesAndSelfTo<ServiceInitializer>().FromNew().WithArguments(_services.Get());
+            Container.BindInterfacesAndSelfTo<ServiceInitializer>().FromNew().AsSingle().WithArguments(_services.Get());
         }
     }
 }
