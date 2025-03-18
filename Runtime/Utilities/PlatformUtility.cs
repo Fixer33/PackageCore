@@ -21,24 +21,7 @@
 #elif UNITY_WSA
             CurrentPlatform = PlatformSpecification.UWP;
 #elif !UNITY_EDITOR && UNITY_WEBGL
-#error Needs correcting!
-        if (_specification.HasFlag(PlatformSpecification.WebMobile) || _specification.HasFlag(PlatformSpecification.WebDesktop))
-        {
-            if (PlatformDefiner.Mobile && _specification.HasFlag(PlatformSpecification.WebMobile) == false)
-            {
-                Destroy(gameObject);
-            }
-            
-            if (PlatformDefiner.Mobile == false &&
-                     _specification.HasFlag(PlatformSpecification.WebDesktop) == false)
-            {
-                Destroy(gameObject);
-            }
-            return;
-        }
-
-        Destroy(gameObject);
-        return;
+            CurrentPlatform = PlatformSpecification.WebDesktop;
 #endif
         }
         
