@@ -11,8 +11,9 @@ namespace Core.Services.Ads
     public class AutomaticAdTrackingService : ServiceScriptableObject
     {
         private static readonly List<AutomaticAdRequest> _requestsToRegisterOnInit = new();
+        private static readonly IList<IAdPaywall> _specialPaywalls = new List<IAdPaywall>();
         private static AutomaticAdTrackingService _instance;
-        private static IView _paywall;
+        private static IAdPaywall _defaultPaywall;
 
         [SerializeField] private bool _runAdOnInitialize;
         [SerializeField] private AutomaticAdCallData[] _primarySequence;
@@ -45,7 +46,8 @@ namespace Core.Services.Ads
         public override void DisposeService()
         {
             _instance = null;
-            _paywall = null;
+            _defaultPaywall = null;
+            _specialPaywalls.Clear();
             _requestsToRegisterOnInit.Clear();
             base.DisposeService();
             IAP.PremiumPurchased -= IAPOnPremiumPurchased;
@@ -99,12 +101,23 @@ namespace Core.Services.Ads
                 case AutomaticAdType.None:
                     return;
                 case AutomaticAdType.Paywall:
-                    if (_paywall.IsAlive() == false)
+                    IAdPaywall paywall = null;
+                    foreach (var specialPaywall in _specialPaywalls)
+                    {
+                        if (specialPaywall.IsValidForSpecialShow)
+                            paywall = specialPaywall;
+
+                        if (paywall != null)
+                            break;
+                    }
+                    paywall ??= _defaultPaywall;
+                    
+                    if (paywall.View.IsAlive() == false)
                     {
                         onFail?.Invoke();
                         return;
                     }
-                    _paywall.Show();
+                    paywall.View.Show();
                     break;
                 case AutomaticAdType.Interstitial:
                     ADS.ShowInterstitial(null, onShowComplete, error => onFail?.Invoke());
@@ -115,13 +128,24 @@ namespace Core.Services.Ads
             }
         }
 
-        public static void RegisterPaywall(IView paywall)
+        public static void RegisterPaywall(IAdPaywall paywall)
         {
-            if (paywall.IsAlive() == false)
+            if (paywall == null || paywall.View.IsAlive() == false)
                 return;
 
-            _paywall = paywall;
-            _paywall.VisibilityChanged += (sender, args) =>
+            switch (paywall.PaywallType)
+            {
+                case PaywallType.Default:
+                    _defaultPaywall = paywall;
+                    break;
+                case PaywallType.Special:
+                    _specialPaywalls.Add(paywall);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+            
+            paywall.View.VisibilityChanged += (sender, isVisible) =>
             {
                 if (_instance == false)
                     return;
@@ -173,6 +197,20 @@ namespace Core.Services.Ads
             Interstitial,
             AppOpen,
         }
+    }
+    
+    public interface IAdPaywall
+    {
+        public PaywallType PaywallType { get; }
+        public virtual bool IsValidForSpecialShow => true;
+        
+        public virtual IView View => this as IView; 
+    }
+
+    public enum PaywallType
+    {
+        Default,
+        Special,
     }
     
     public class AutomaticAdRequest
