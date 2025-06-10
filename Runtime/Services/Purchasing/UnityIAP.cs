@@ -309,12 +309,6 @@ namespace Core.Services.Purchasing
         private void OnValidate()
         {
             _subscriptionStoreSyncTime = Mathf.Clamp(_subscriptionStoreSyncTime, 0, 1000000);
-            
-            if (_saveNonConsumables && DataSaver.IsReady == false)
-            {
-                Debug.LogError("IAP is already instantiated but saver is not! Check if you have a DataSaver service or uncheck SaveNonConsumables!\n" +
-                               "If you are in editor and have script - ignore this message");
-            }
         }
 #endif
     }
