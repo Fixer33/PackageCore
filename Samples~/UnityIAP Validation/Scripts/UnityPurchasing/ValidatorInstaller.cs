@@ -1,7 +1,8 @@
 using Core.Services.Purchasing;
 using UnityEngine;
+using UnityEngine.Purchasing.Security;
 
-namespace CrossPlatformValidation.Scripts.UnityPurchasing.generated
+namespace CrossPlatformValidation.Scripts.UnityPurchasing
 {
     public static class ValidatorInstaller
     {

@@ -15,7 +15,7 @@
   },
   "samples": [
     {
-      "displayName": "UnityIAP Validation",
+      "displayName": "UnityIAP Validation (Unity IAP below 5.0.0)",
       "description": "Import this package after creating Validator classes for Unity IAP",
       "path": "Samples~/UnityIAP Validation"
     },
