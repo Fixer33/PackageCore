@@ -4,79 +4,75 @@ using System.Linq;
 using Core.Services.DataSaving;
 using Core.Services.Purchasing.Products;
 using UnityEngine;
-#if UNITY_WEBGL
-using UnifiedTask = Cysharp.Threading.Tasks.UniTask;
-#else
-using UnifiedTask = System.Threading.Tasks.Task;
-#endif
 using UnityEngine.Purchasing;
-using UnityEngine.Purchasing.Extension;
 using System.Collections.Generic;
+using System.Text;
+using System.Threading.Tasks;
 #endif
 
 namespace Core.Services.Purchasing
 {
 #if USE_UNITY_IAP && (UNITY_ANDROID || UNITY_IOS || UNITY_STANDALONE_OSX)
     [CreateAssetMenu(fileName = "Unity IAP", menuName = "Services/Purchasing/Unity IAP")]
-    public class UnityIAP : IAP, IDetailedStoreListener
+    public class UnityIAP : IAP
     {
         public static Action<string> ValidationMethod = delegate {};
         
         [SerializeField] private IAPProductBase[] _products;
         [SerializeField, Tooltip("Will need Data saver instance")] private bool _saveNonConsumables;
         [SerializeField] private float _subscriptionStoreSyncTime = 10;
-        private readonly Dictionary<IAPSubscription, bool> _subscriptionsCache = new(); 
-        private IStoreController _storeController;
-        private IExtensionProvider _extensionProvider;
+        private readonly Dictionary<string, Product> _productsCache = new(); 
+        private readonly Dictionary<string, bool> _subscriptionsCache = new(); 
+        private List<IAPProductBase> _allProducts;
+        private StoreController _storeController;
         private EventCallbackCollection _callbacks;
 
-        protected override void Initialize(EventCallbackCollection callbacksToInvoke)
+        protected override async void Initialize(EventCallbackCollection callbacksToInvoke)
         {
             if (_products is not { Length: > 0 } && _premiumProducts is not { Length: > 0 })
                 throw new Exception("No products defined!");
             
             _callbacks = callbacksToInvoke;
             
-            ConfigurationBuilder builder = ConfigurationBuilder.Instance(StandardPurchasingModule.Instance());
-
-            List<IAPProductBase> products = new List<IAPProductBase>(_premiumProducts);
+            _storeController = UnityIAPServices.StoreController();
+  
+            _storeController.OnPurchasePending += OnPurchasePending;  
+            _storeController.OnProductsFetched += OnProductsFetched;
+            _storeController.OnPurchasesFetched += OnPurchasesFetched;
+            _storeController.OnProductsFetchFailed += OnProductsFetchFailed;
+            _storeController.OnPurchasesFetchFailed += OnPurchasesFetchFailed;
+            _storeController.OnPurchaseFailed += OnPurchaseFailed;
+            
+            await _storeController.Connect();
+  
+            var initialProductsToFetch = new List<ProductDefinition>();
+            
+            _allProducts = new List<IAPProductBase>(_premiumProducts);
             for (int i = 0; i < _products.Length; i++)
             {
-                if (products.Contains(_products[i]) == false)
-                    products.Add(_products[i]);
+                if (_allProducts.Contains(_products[i]) == false)
+                    _allProducts.Add(_products[i]);
             }
-            foreach (var product in products)
+            foreach (var product in _allProducts)
             {
-                builder.AddProduct(product.GetId(), GetProductType(product));
+                initialProductsToFetch.Add(new ProductDefinition(product.GetId(), GetProductType(product)));
             }
+  
+            _storeController.FetchProducts(initialProductsToFetch);
             
-#if UNITY_EDITOR
-            StandardPurchasingModule.Instance().useFakeStoreAlways = true;
-#else
-            StandardPurchasingModule.Instance().useFakeStoreAlways = false;
-#endif
-            
-            UnityPurchasing.Initialize(this, builder);
+            StoreSync(_subscriptionStoreSyncTime);
         }
+
 
         protected override void PurchaseProduct(IAPProductBase data)
         {
             if (_storeController != null)
             {
-                Product product = _storeController.products.WithID(data.GetId());
-
-                if (product is { availableToPurchase: true })
-                {
-                    _storeController.InitiatePurchase(product);
-                }
-                else
-                {
-                    _callbacks.ProductPurchaseFailed?.Invoke(data, "Product not found or not available for purchase");
-                }
+                _storeController.PurchaseProduct(data.GetId());
             }
             else
             {
-                _callbacks.ProductPurchaseFailed?.Invoke(data, "IAPManager not initialized");
+                _callbacks.ProductPurchaseFailed?.Invoke(data, "Store controller not initialized");
             }
         }
 
@@ -84,8 +80,11 @@ namespace Core.Services.Purchasing
         {
             if (_storeController == null)
                 return "";
+
+            if (_productsCache.ContainsKey(product.GetId()) == false)
+                return "price not found";
             
-            var prod = _storeController.products.WithID(product.GetId());
+            var prod = _productsCache[product.GetId()];
             if (prod == null)
                 return "0";
             
@@ -99,7 +98,7 @@ namespace Core.Services.Purchasing
         
             if (data is IAPSubscription sub)
             {
-                return IsSubscribed(sub);
+                return _subscriptionsCache.GetValueOrDefault(sub.GetId(), false);
             }
             else if (data is IAPConsumable)
             {
@@ -117,40 +116,42 @@ namespace Core.Services.Purchasing
 
         public override void RestorePurchases()
         {
-#if UNITY_STANDALONE_OSX || UNITY_IOS
-            _extensionProvider.GetExtension<IAppleExtensions>().RestoreTransactions((restored, data) =>
+            _storeController.RestoreTransactions((restored, data) =>
             {
                 if (restored)
                     Debug.Log("Purchases have been restored. " + data);
                 else
                     Debug.Log("Failed to restore purchases. " + data);
             });
-#elif UNITY_WSA
-            _extensionProvider.GetExtension<IMicrosoftExtensions>().RestoreTransactions();
-#else
-            Debug.LogWarning("Current platform either not supporting restoring or not implemented");
-#endif
         }
 
-        #region IAP Interface implementation
+        #region Callbacks
 
-        public void OnInitializeFailed(InitializationFailureReason error)
+        private void OnPurchasesFetchFailed(PurchasesFetchFailureDescription payload)
         {
-            _callbacks.InitializeFailed?.Invoke(nameof(error));
+            if (IsInitialized == false)
+                _callbacks.InitializeFailed?.Invoke($"{payload.FailureReason}: {payload.Message}");
         }
 
-        public void OnInitializeFailed(InitializationFailureReason error, string message)
+        private void OnProductsFetchFailed(ProductFetchFailed payload)
         {
-            _callbacks.InitializeFailed?.Invoke($"{nameof(error)}: {message}");
+            if (IsInitialized)
+                return;
+            
+            StringBuilder sb = new();
+            payload.FailedFetchProducts.ForEach(i => sb.AppendLine(i.id));
+            _callbacks.InitializeFailed?.Invoke($"{payload.FailureReason}. Products: {sb.ToString()}");
+            
+            sb.Clear();
         }
 
-        public PurchaseProcessingResult ProcessPurchase(PurchaseEventArgs args)
+        private void OnPurchasePending(PendingOrder order)
         {
             bool validPurchase = true;
             string errorMsg = "";
             try
             {
-                ValidationMethod?.Invoke(args.purchasedProduct.receipt);
+                ValidationMethod?.Invoke(order.Info.Receipt);
             }
             catch (Exception e)
             {
@@ -163,11 +164,22 @@ namespace Core.Services.Purchasing
 #endif
             }
 
-            IAPProductBase product = null;
-            foreach (var productBase in _products.Union(_premiumProducts))
+            if (order.Info.PurchasedProductInfo.Count < 1)
             {
-                if (GetProductType(productBase) == args.purchasedProduct.definition.type &&
-                    productBase.GetId().Equals(args.purchasedProduct.definition.id))
+                _callbacks.UnknownErrorOccured?.Invoke("OnPurchasePending has received order with no purchased products");
+                return;
+            }
+
+            if (order.Info.PurchasedProductInfo.Count > 1)
+            {
+                _callbacks.UnknownErrorOccured?.Invoke("OnPurchasePending has received order with more than 1 purchased product. \n" +
+                                                       $"Only {order.Info.PurchasedProductInfo[0].productId} will be processed!");
+            }
+
+            IAPProductBase product = null;
+            foreach (var productBase in _allProducts)
+            {
+                if (productBase.GetId().Equals(order.Info.PurchasedProductInfo[0].productId))
                 {
                     product = productBase;
                     break;
@@ -176,14 +188,14 @@ namespace Core.Services.Purchasing
             
             if (product == null)
             {
-                _callbacks.ProductPurchaseFailed?.Invoke(product, "No product found with id: " + args.purchasedProduct.definition.id);
-                return PurchaseProcessingResult.Complete;
+                _callbacks.ProductPurchaseFailed?.Invoke(product, "No product found with id: " + order.Info.PurchasedProductInfo[0].productId);
+                return;
             }
             
             if (validPurchase == false)
             {
                 _callbacks.ProductPurchaseFailed?.Invoke(product, errorMsg);
-                return PurchaseProcessingResult.Complete;
+                return;
             }
             
 #if UNITY_EDITOR
@@ -192,7 +204,7 @@ namespace Core.Services.Purchasing
             if (isPurchased == false)
             {
                 _callbacks.ProductPurchaseFailed?.Invoke( product, "User cancelled");
-                return PurchaseProcessingResult.Complete;
+                return;
             }
             _isDebugPremium = true;
 #endif
@@ -204,49 +216,73 @@ namespace Core.Services.Purchasing
 
             if (product is IAPSubscription sub)
             {
-                _subscriptionsCache[sub] = true;
+                _subscriptionsCache[sub.GetId()] = true;
             }
 
             _callbacks.ProductPurchased?.Invoke(product);
-            return PurchaseProcessingResult.Complete;
+            _storeController.ConfirmPurchase(order);
         }
 
-        public void OnPurchaseFailed(Product product, PurchaseFailureReason failureReason)
+        private void OnProductsFetched(List<Product> products)
         {
-            for (int i = 0; i < _products.Length; i++)
+            foreach (var product in products)
             {
-                if (GetProductType(_products[i]) == product.definition.type && _products[i].GetId().Equals(product.definition.id))
-                {
-                    _callbacks.ProductPurchaseFailed?.Invoke(_products[i], nameof(failureReason));
-                    return;
-                }
-            }
-            
-            
-            Debug.LogWarning("Purchase failed, but no product found: " + product.definition.id + " : " + nameof(failureReason));
-        }
-
-        public void OnInitialized(IStoreController controller, IExtensionProvider extensions)
-        {
-            _storeController = controller;
-            _extensionProvider = extensions;
-            _callbacks.Initialized?.Invoke();
-
-            StoreSync(_subscriptionStoreSyncTime);
-        }
-
-        public void OnPurchaseFailed(Product product, PurchaseFailureDescription failureDescription)
-        {
-            for (int i = 0; i < _products.Length; i++)
-            {
-                if (GetProductType(_products[i]) == product.definition.type && _products[i].GetId().Equals(product.definition.id))
-                {
-                    _callbacks.ProductPurchaseFailed?.Invoke(_products[i], failureDescription.message);
-                    return;
-                }
+                string id = product.definition.id;
+                if (_productsCache.TryAdd(id, product) == false)
+                    _productsCache[id] = product;
             }
 
-            Debug.LogWarning("Purchase failed, but no product found: " + product.definition.id + " : " + failureDescription.message);
+            _storeController.FetchPurchases();
+            
+            if (IsInitialized == false)
+                _callbacks.Initialized?.Invoke();
+        }
+
+        private void OnPurchasesFetched(Orders orders)
+        {
+            // Process purchases, e.g. check for entitlements from completed orders
+
+            foreach (var purchasedProductInfo in orders.ConfirmedOrders.SelectMany(i => i.Info.PurchasedProductInfo))
+            {
+                if (purchasedProductInfo.subscriptionInfo == null)
+                    continue;
+
+                bool isSubscribed = purchasedProductInfo.subscriptionInfo.IsSubscribed() == Result.True;
+                if (_subscriptionsCache.ContainsKey(purchasedProductInfo.productId) == false)
+                    _subscriptionsCache.Add(purchasedProductInfo.productId, isSubscribed);
+                else
+                    _subscriptionsCache[purchasedProductInfo.productId] |= isSubscribed;
+            }
+        }
+        
+        private void OnPurchaseFailed(FailedOrder failedOrder)
+        {
+            if (failedOrder.Info.PurchasedProductInfo.Count < 0)
+            {
+                _callbacks.UnknownErrorOccured?.Invoke("Purchase failed, but no products are in the order!");
+                return;
+            }
+
+            List<IPurchasedProductInfo> productsInOrder = new(failedOrder.Info.PurchasedProductInfo);
+            for (int i = 0; i < _products.Length; i++)
+            {
+                foreach (var productInfo in failedOrder.Info.PurchasedProductInfo)
+                {
+                    if (_products[i].GetId().Equals(productInfo.productId) == false)
+                        continue;
+                    
+                    _callbacks.ProductPurchaseFailed?.Invoke(_products[i], failedOrder.FailureReason.ToString());
+                    
+                    if (productsInOrder.Contains(productInfo))
+                        productsInOrder.Remove(productInfo);
+                }
+                
+            }
+            
+            foreach (var purchasedProductInfo in productsInOrder)
+            {
+                Debug.LogWarning("Purchase failed, but no product found: " + purchasedProductInfo.productId + " : " + failedOrder.FailureReason.ToString());
+            }
         }
 
         #endregion
@@ -263,52 +299,15 @@ namespace Core.Services.Purchasing
         {
             while (Application.isPlaying && IsServiceInitialized)
             {
-                SyncSubscriptionsWithStore();
-                await UnifiedTask.Delay(Convert.ToInt32(time * 1000));
+                _storeController.FetchPurchases();
+                await Task.Delay(Convert.ToInt32(time * 1000));
             }
-        }
-
-        private bool IsSubscribed(IAPSubscription subscription)
-        {
-            if (_subscriptionsCache.ContainsKey(subscription) == false)
-                SyncSubscriptionsWithStore();
-
-            return _subscriptionsCache[subscription];
-        }
-
-        private void SyncSubscriptionsWithStore()
-        {
-            foreach (var iapProductBase in _products.Union(_premiumProducts))
-            {
-                if (iapProductBase is not IAPSubscription sub)
-                    continue;
-
-                _subscriptionsCache[sub] = IsSubscribedInStore(sub);
-            }
-        }
-        
-        private bool IsSubscribedInStore(IAPSubscription subscription)
-        {
-            var prod = _storeController.products.WithID(subscription.GetId());
-            if (prod is { receipt: not null })
-            {
-                SubscriptionManager sm = new SubscriptionManager(prod, null);
-                try
-                {
-                    return sm.getSubscriptionInfo().isSubscribed() is Result.True;
-                }
-                catch
-                {
-                }
-            }
-
-            return false;
         }
         
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            _subscriptionStoreSyncTime = Mathf.Clamp(_subscriptionStoreSyncTime, 0, 1000000);
+            _subscriptionStoreSyncTime = Mathf.Clamp(_subscriptionStoreSyncTime, 30, 1000000);
         }
 #endif
     }

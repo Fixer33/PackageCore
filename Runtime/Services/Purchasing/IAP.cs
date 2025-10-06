@@ -39,7 +39,7 @@ namespace Core.Services.Purchasing
 
             Instance = this;
             _callbacks = new EventCallbackCollection(
-                InitializedCallback, InitializeFailedCallback, ProductPurchasedCallback, PurchaseFailedCallback);
+                InitializedCallback, InitializeFailedCallback, ProductPurchasedCallback, PurchaseFailedCallback, UnknownErrorCallback);
             Initialize(_callbacks);
         }
         
@@ -120,9 +120,15 @@ namespace Core.Services.Purchasing
 
         private void InitializedCallback()
         {
+            Debug.Log("IAP initialized");
             IsServiceInitialized = true;
             IsInitialized = true;
             Initialized?.Invoke();
+        }
+
+        private void UnknownErrorCallback(string errormessage)
+        {
+            Debug.LogError("IAP has encountered an unknown error: " + errormessage);
         }
 
         #region Static methods
@@ -206,21 +212,25 @@ namespace Core.Services.Purchasing
 
         protected struct EventCallbackCollection
         {
-            public delegate void InitFailDelegate(string errorMessage);
+            public delegate void ErrorMessageDelegate(string errorMessage);
             public delegate void PurchaseFailDelegate(IAPProductBase product, string errorMessage);
 
             public Action Initialized;
-            public InitFailDelegate InitializeFailed;
+            public ErrorMessageDelegate InitializeFailed;
             public Action<IAPProductBase> ProductPurchased;
             public PurchaseFailDelegate ProductPurchaseFailed;
 
-            public EventCallbackCollection(Action initialized, InitFailDelegate initializeFailed,
-                Action<IAPProductBase> productPurchased, PurchaseFailDelegate purchaseFailed)
+            public ErrorMessageDelegate UnknownErrorOccured;
+
+            public EventCallbackCollection(Action initialized, ErrorMessageDelegate initializeFailed,
+                Action<IAPProductBase> productPurchased, PurchaseFailDelegate purchaseFailed, 
+                ErrorMessageDelegate unknownErrorOccured)
             {
                 Initialized = initialized;
                 InitializeFailed = initializeFailed;
                 ProductPurchased = productPurchased;
                 ProductPurchaseFailed = purchaseFailed;
+                UnknownErrorOccured = unknownErrorOccured;
             }
         }
     }

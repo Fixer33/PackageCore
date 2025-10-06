@@ -1,3 +1,9 @@
+## [2.0.0] - 2025-10-06
+
+### Changed
+
+- Updated Unity IAP module to support new 5.0.1 version
+
 ## [1.0.1] - 2025-03-10
 
 ### Changed

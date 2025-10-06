@@ -3,8 +3,7 @@
     "rootNamespace": "Core",
     "references": [
         "Unity.Services.Core",
-        "UnityEngine.Purchasing",
-        "UnityEngine.Purchasing.Stores",
+        "Unity.Purchasing",
         "Unity.Services.Analytics",
         "Zenject",
         "UniTask"
@@ -26,7 +25,7 @@
         },
         {
             "name": "com.unity.purchasing",
-            "expression": "4.12.2",
+            "expression": "5.0.1",
             "define": "USE_UNITY_IAP"
         },
         {
