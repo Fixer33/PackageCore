@@ -4,6 +4,10 @@
 
 - Updated Unity IAP module to support new 5.0.1 version
 
+### Fixed
+
+- Tag drawer lags
+
 ## [1.0.1] - 2025-03-10
 
 ### Changed
