@@ -157,22 +157,22 @@ namespace Core.Services.Purchasing
 #endif
             }
 
-            if (order.Info.PurchasedProductInfo.Count < 1)
+            if (order.CartOrdered.Items().Count < 1)
             {
                 _callbacks.UnknownErrorOccured?.Invoke("OnPurchasePending has received order with no purchased products");
                 return;
             }
 
-            if (order.Info.PurchasedProductInfo.Count > 1)
+            if (order.CartOrdered.Items().Count > 1)
             {
                 _callbacks.UnknownErrorOccured?.Invoke("OnPurchasePending has received order with more than 1 purchased product. \n" +
-                                                       $"Only {order.Info.PurchasedProductInfo[0].productId} will be processed!");
+                                                       $"Only {order.CartOrdered.Items()[0].Product.definition.id} will be processed!");
             }
 
             IAPProductBase product = null;
             foreach (var productBase in _allProducts)
             {
-                if (productBase.GetId().Equals(order.Info.PurchasedProductInfo[0].productId))
+                if (productBase.GetId().Equals(order.CartOrdered.Items()[0].Product.definition.id))
                 {
                     product = productBase;
                     break;
@@ -181,7 +181,7 @@ namespace Core.Services.Purchasing
             
             if (product == null)
             {
-                _callbacks.ProductPurchaseFailed?.Invoke(product, "No product found with id: " + order.Info.PurchasedProductInfo[0].productId);
+                _callbacks.ProductPurchaseFailed?.Invoke(product, "No product found with id: " + order.CartOrdered.Items()[0].Product.definition.id);
                 return;
             }
             
@@ -250,18 +250,18 @@ namespace Core.Services.Purchasing
         
         private void OnPurchaseFailed(FailedOrder failedOrder)
         {
-            if (failedOrder.Info.PurchasedProductInfo.Count < 0)
+            if (failedOrder.CartOrdered.Items().Count < 0)
             {
                 _callbacks.UnknownErrorOccured?.Invoke("Purchase failed, but no products are in the order!");
                 return;
             }
 
-            List<IPurchasedProductInfo> productsInOrder = new(failedOrder.Info.PurchasedProductInfo);
+            List<CartItem> productsInOrder = new(failedOrder.CartOrdered.Items());
             for (int i = 0; i < _products.Length; i++)
             {
-                foreach (var productInfo in failedOrder.Info.PurchasedProductInfo)
+                foreach (var productInfo in failedOrder.CartOrdered.Items())
                 {
-                    if (_products[i].GetId().Equals(productInfo.productId) == false)
+                    if (_products[i].GetId().Equals(productInfo.Product.definition.id) == false)
                         continue;
                     
                     _callbacks.ProductPurchaseFailed?.Invoke(_products[i], failedOrder.FailureReason.ToString());
@@ -274,7 +274,7 @@ namespace Core.Services.Purchasing
             
             foreach (var purchasedProductInfo in productsInOrder)
             {
-                Debug.LogWarning("Purchase failed, but no product found: " + purchasedProductInfo.productId + " : " + failedOrder.FailureReason.ToString());
+                Debug.LogWarning("Purchase failed, but no product found: " + purchasedProductInfo.Product.definition.id + " : " + failedOrder.FailureReason.ToString());
             }
         }
 
