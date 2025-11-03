@@ -257,14 +257,14 @@ namespace Core.Services.Purchasing
             }
 
             List<CartItem> productsInOrder = new(failedOrder.CartOrdered.Items());
-            for (int i = 0; i < _products.Length; i++)
+            for (int i = 0; i < _allProducts.Count; i++)
             {
                 foreach (var productInfo in failedOrder.CartOrdered.Items())
                 {
-                    if (_products[i].GetId().Equals(productInfo.Product.definition.id) == false)
+                    if (_allProducts[i].GetId().Equals(productInfo.Product.definition.id) == false)
                         continue;
                     
-                    _callbacks.ProductPurchaseFailed?.Invoke(_products[i], failedOrder.FailureReason.ToString());
+                    _callbacks.ProductPurchaseFailed?.Invoke(_allProducts[i], failedOrder.FailureReason.ToString());
                     
                     if (productsInOrder.Contains(productInfo))
                         productsInOrder.Remove(productInfo);
