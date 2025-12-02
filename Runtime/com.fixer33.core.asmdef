@@ -8,7 +8,8 @@
         "UnityEngine.Purchasing.Stores",
         "Unity.Services.Analytics",
         "Zenject",
-        "UniTask"
+        "UniTask",
+        "Unity.Netcode.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -44,6 +45,11 @@
             "name": "com.fixer33.extenject-fork",
             "expression": "6.0.2",
             "define": "USE_EXTENJECT"
+        },
+        {
+            "name": "com.unity.netcode.gameobjects",
+            "expression": "2.7.0",
+            "define": "NETCODE_FOR_GAMEOBJECTS"
         }
     ],
     "noEngineReferences": false

@@ -1,4 +1,7 @@
 using UnityEngine;
+#if NETCODE_FOR_GAMEOBJECTS
+using Unity.Netcode;
+#endif
 
 namespace Core.Utilities
 {
@@ -22,28 +25,13 @@ namespace Core.Utilities
 
     public abstract class SingletonBehaviour<T> : MonoBehaviour where T : SingletonBehaviour<T>
     {
-        private static T instance = null;
-
-        public static T Instance
-        {
-            get
-            {
-                if (instance != null)
-                {
-                    return instance;
-                }
-                else
-                {
-                    return null;
-                }
-            }
-        }
+        public static T Instance { get; private set; }
 
         protected virtual void Awake()
         {
-            if (instance == null)
+            if (Instance == null)
             {
-                instance = this as T;
+                Instance = this as T;
             }
             else
             {
@@ -54,8 +42,33 @@ namespace Core.Utilities
 
         protected virtual void OnDestroy()
         {
-            instance = null;
+            Instance = null;
         }
     }
     
+#if NETCODE_FOR_GAMEOBJECTS
+    public abstract class SingletonNetworkBehaviour<T> : NetworkBehaviour where T : SingletonNetworkBehaviour<T>
+    {
+        public static T Instance { get; private set; }
+
+        protected virtual void Awake()
+        {
+            if (Instance == null)
+            {
+                Instance = this as T;
+            }
+            else
+            {
+                Debug.LogError($"Second instance {gameObject.name} of class {typeof(T).Name} was destroed");
+                Destroy(gameObject);
+            }
+        }
+
+        public override void OnDestroy()
+        {
+            base.OnDestroy();
+            Instance = null;
+        }
+    }
+#endif
 }
