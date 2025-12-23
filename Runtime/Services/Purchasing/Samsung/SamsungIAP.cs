@@ -9,6 +9,7 @@ using UnityEngine;
 
 namespace Core.Services.Purchasing.Samsung
 {
+    [CreateAssetMenu(fileName = "Samsung IAP", menuName = "Services/Purchasing/Samsung IAP")]
     public class SamsungIAP : IAP
     {
         private struct ProductData
