@@ -59,12 +59,13 @@ namespace Core.Services.Ads
             IAP.PremiumPurchased -= IAPOnPremiumPurchased;
         }
 
-        private void CallAd()
+        private void CallAd() => CallAd(false);
+        private void CallAd(bool ignoreCooldown)
         {
             if (_hasPremium)
                 return;
             
-            if ((DateTime.UtcNow - _lastShown).TotalSeconds < _currentCooldown)
+            if (ignoreCooldown == false && (DateTime.UtcNow - _lastShown).TotalSeconds < _currentCooldown)
                 return;
 
             if (++_primarySequenceIndex < _primarySequence.Length)
@@ -172,13 +173,13 @@ namespace Core.Services.Ads
                 if (request == null)
                     continue;
 
-                request.Triggered += () =>
+                request.Triggered += ignoreCooldown =>
                 {
                     if (_instance == false)
                     {
                         return;
                     }
-                    _instance.CallAd();
+                    _instance.CallAd(ignoreCooldown);
                 };
             }
         }
@@ -215,17 +216,27 @@ namespace Core.Services.Ads
     
     public class AutomaticAdRequest
     {
-        public event Action Triggered;
+        public event Action<bool> Triggered;
 
+        public readonly bool IgnoreCooldown;
+        
         private readonly PlatformSpecification _platform;
 
         public AutomaticAdRequest() : this(PlatformSpecification.ALL)
         {
-            
         }
             
-        public AutomaticAdRequest(PlatformSpecification platforms)
+        public AutomaticAdRequest(PlatformSpecification platforms) : this(false, platforms)
         {
+        }
+        
+        public AutomaticAdRequest(bool ignoreCooldown) : this(ignoreCooldown, PlatformSpecification.ALL)
+        {
+        }
+            
+        public AutomaticAdRequest(bool ignoreCooldown, PlatformSpecification platforms)
+        {
+            IgnoreCooldown = ignoreCooldown;
             _platform = platforms;
 
             AutomaticAdTrackingService.RegisterInterstitialRequestEvent(this);
@@ -242,7 +253,7 @@ namespace Core.Services.Ads
             if (PlatformUtility.IsForCurrentPlatform(_platform) == false)
                 return;
                 
-            Triggered?.Invoke();
+            Triggered?.Invoke(IgnoreCooldown);
         }
     }
 }
