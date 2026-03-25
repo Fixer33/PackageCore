@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 #if USE_UNITY_IAP
 using Core.Services.Purchasing.Products;
 using UnityEngine;
@@ -12,6 +13,7 @@ namespace Core.Services.Purchasing
     {
         public static Action<string> ValidationMethod = delegate {};
         
+        [Header("Unity IAP")]
         [SerializeField] private IAPProductBase[] _products;
         [SerializeField, Tooltip("Will need Data saver instance")] private bool _saveNonConsumables;
         [SerializeField] private float _subscriptionStoreSyncTime = 10;

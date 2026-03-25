@@ -4,7 +4,9 @@ using UnifiedTask = Cysharp.Threading.Tasks.UniTask;
 using UnifiedTask = System.Threading.Tasks.Task;
 #endif
 using System;
+using System.Threading;
 using Core.Services.Purchasing.Products;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 namespace Core.Services.Purchasing
@@ -23,10 +25,16 @@ namespace Core.Services.Purchasing
         public static bool IsInitialized { get; protected set; }
         public static IAP Instance { get; protected set; }
 
-        [SerializeField] private bool _retryInitializationOnFail;
-        [SerializeField] protected IAPProductBase[] _premiumProducts = Array.Empty<IAPProductBase>();
+        [Header("Initialization")]
+        [SerializeField] private int _maxInitializationAttempts = 20;
+        [SerializeField] private int _initializationReattemptIntervalMs = 1500;
+        [Header("Debug")]
         [SerializeField] protected bool _isDebugPremium;
+        [Header("Products")]
+        [SerializeField] protected IAPProductBase[] _premiumProducts = Array.Empty<IAPProductBase>();
         [Space] private EventCallbackCollection _callbacks;
+        private bool _isWaitingForInitialization;
+        private CancellationTokenSource _initializationCts;
 
         public override void InitializeService()
         {
@@ -40,7 +48,32 @@ namespace Core.Services.Purchasing
             Instance = this;
             _callbacks = new EventCallbackCollection(
                 InitializedCallback, InitializeFailedCallback, ProductPurchasedCallback, PurchaseFailedCallback, UnknownErrorCallback);
-            Initialize(_callbacks);
+
+            _maxInitializationAttempts = Mathf.Max(1, _maxInitializationAttempts);
+            _initializationCts = new();
+            DoInitializationAttemptCycle(_maxInitializationAttempts, _initializationCts.Token).Forget();
+
+            async UniTaskVoid DoInitializationAttemptCycle(int attempts, CancellationToken ct)
+            {
+                DateTime start = DateTime.Now;
+                for (int i = 0; i < attempts; i++)
+                {
+                    _isWaitingForInitialization = true;
+                    Debug.Log("Started IAP initialization");
+                    Initialize(_callbacks);
+
+                    await UniTask.WaitWhile(() => _isWaitingForInitialization, cancellationToken: ct);
+                    
+                    if (IsInitialized)
+                        return;
+
+                    int reattemptTime = _initializationReattemptIntervalMs * (i + 1) * (i + 1);
+                    Debug.LogError($"Retrying to initialize IAP in {reattemptTime} milliseconds");
+                    await UniTask.Delay(reattemptTime, cancellationToken: ct);
+                }
+                
+                Debug.LogError("IAP initialization failed after " + attempts + " attempts and " + (DateTime.Now - start).TotalMilliseconds + " milliseconds");
+            }
         }
         
         public override void DisposeService()
@@ -55,6 +88,10 @@ namespace Core.Services.Purchasing
             PremiumPurchased = delegate { };
             ProductPurchaseStarted = delegate { };
             ProductPurchaseEnded = delegate { };
+            
+            _initializationCts?.Cancel();
+            _initializationCts = null;
+            
             DisposeIAP();
         }
 
@@ -111,11 +148,8 @@ namespace Core.Services.Purchasing
         private void InitializeFailedCallback(string errormessage)
         {
             Debug.LogError("IAP initialization failed. " + errormessage);
-            if (_retryInitializationOnFail)
-            {
-                Debug.LogWarning("Retrying to initialize IAP");
-                Initialize(_callbacks);
-            }
+            
+            _isWaitingForInitialization = false;
         }
 
         private void InitializedCallback()
@@ -123,7 +157,11 @@ namespace Core.Services.Purchasing
             Debug.Log("IAP initialized");
             IsServiceInitialized = true;
             IsInitialized = true;
+            _isWaitingForInitialization = false;
             Initialized?.Invoke();
+            
+            _initializationCts?.Cancel();
+            _initializationCts = null;
         }
 
         private void UnknownErrorCallback(string errormessage)
@@ -207,9 +245,7 @@ namespace Core.Services.Purchasing
         }
 
         #endregion
-
-
-
+        
         protected struct EventCallbackCollection
         {
             public delegate void ErrorMessageDelegate(string errorMessage);

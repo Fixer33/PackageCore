@@ -1,8 +1,16 @@
-## [2.1.0] - 2025-03-24
+## [2.1.1] - 2026-03-25
+
+### Changed
+- IAP reinitialization is now done in the async loop instead of callbacks. And now is limited to retries
+
+## [2.1.0] - 2026-03-24
 
 ### Added
 - `MinMax` and `MinMaxInt` utility structs with Random and Clamp helpers.
 - `DebugIAP` implementation for simulating in-app purchases in editor/testing.
+- 
+### Fixed
+- IAP crashes on MAC and iOS
 
 
 ## [2.0.0] - 2025-10-06

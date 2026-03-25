@@ -6,6 +6,8 @@ namespace Core.Services.Purchasing
     [CreateAssetMenu(fileName = "Debug IAP", menuName = "Services/Purchasing/Debug", order = 0)]
     public class DebugIAP : IAP
     {
+        [Header("Debug IAP settings")]
+        [SerializeField] private bool _isInitializationSuccessful = true;
         [SerializeField] private bool _areProductsOwned;
         [SerializeField] private bool _arePurchasesSuccessful;
         private EventCallbackCollection _callbacks;
@@ -30,7 +32,11 @@ namespace Core.Services.Purchasing
         {
             _callbacks = callbacksToInvoke;
             _hasPurchased = false;
-            _callbacks.Initialized?.Invoke();
+            
+            if (_isInitializationSuccessful)
+                _callbacks.Initialized?.Invoke();
+            else
+                _callbacks.InitializeFailed?.Invoke("Debug IAP is marked for fail in it's properties");
         }
 
         protected override void PurchaseProduct(IAPProductBase product)
