@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 10af802336d54d4438eb8cbc2686d3e3
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 54715
+  packageName: Native Plugin for Universal Windows Platform
+  packageVersion: 3.0.0
+  assetPath: Assets/WSANative/Store/WSAStoreConsumableResult.cs
+  uploadId: 666178

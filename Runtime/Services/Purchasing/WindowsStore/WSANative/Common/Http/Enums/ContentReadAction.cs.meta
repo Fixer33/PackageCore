@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: 3135445160da5564ca26f76fed056803
+timeCreated: 1482712607
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 54715
+  packageName: Native Plugin for Universal Windows Platform
+  packageVersion: 3.0.0
+  assetPath: Assets/WSANative/Common/Http/Enums/ContentReadAction.cs
+  uploadId: 666178

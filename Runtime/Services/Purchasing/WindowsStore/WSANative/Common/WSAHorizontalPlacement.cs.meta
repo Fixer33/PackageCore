@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 528eeef57cc6ad145bae417fd8174898
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 54715
+  packageName: Native Plugin for Universal Windows Platform
+  packageVersion: 3.0.0
+  assetPath: Assets/WSANative/Common/WSAHorizontalPlacement.cs
+  uploadId: 666178

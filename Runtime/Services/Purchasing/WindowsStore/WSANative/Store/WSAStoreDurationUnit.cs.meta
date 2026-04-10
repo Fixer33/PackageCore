@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: a4f04de1fd4548e449ff453c0edf7e4a
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 54715
+  packageName: Native Plugin for Universal Windows Platform
+  packageVersion: 3.0.0
+  assetPath: Assets/WSANative/Store/WSAStoreDurationUnit.cs
+  uploadId: 666178

@@ -1,32 +1,30 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using Core.Services.Purchasing;
+using CI.WSANative.Common;
+using CI.WSANative.Store;
 using Core.Services.Purchasing.Products;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-
 #if ENABLE_WINMD_SUPPORT
 using Windows.Services.Store;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 #endif
 
-namespace Services.Purchasing
+namespace Core.Services.Purchasing
 {
     [CreateAssetMenu(fileName = "Win Store IAP", menuName = "Services/Purchasing/Windows store", order = 0)]
     public class WinStoreIAP : IAP
     {
         [SerializeField] private int _initializationDelayMs = 1500;
-        private Dictionary<string, WinStoreProduct> _products = new Dictionary<string, WinStoreProduct>();
+        private Dictionary<string, WSAStoreProduct> _products = new Dictionary<string, WSAStoreProduct>();
         private EventCallbackCollection _callbacks;
-
+        
         public override string GetProductCost(IAPProductBase product)
         {
             string id = product.GetId();
 
-            if (_products.TryGetValue(id, out WinStoreProduct productData) == false)
+            if (_products.TryGetValue(id, out WSAStoreProduct productData) == false)
                 return "no-product-found";
 
             return productData.FormattedPrice;
@@ -36,7 +34,7 @@ namespace Services.Purchasing
         {
             string id = product.GetId();
 
-            if (_products.TryGetValue(id, out WinStoreProduct productData) == false)
+            if (_products.TryGetValue(id, out WSAStoreProduct productData) == false)
                 return false;
 
             return productData.IsInUserCollection;
@@ -44,37 +42,33 @@ namespace Services.Purchasing
 
         public override void RestorePurchases()
         {
-            Debug.LogWarning("Restore is not supported by Win Store IAP");
+            Debug.LogWarning("Restore is not supported by WSA Native");
         }
 
         protected override async void Initialize(EventCallbackCollection callbacksToInvoke)
         {
             _callbacks = callbacksToInvoke;
 
+            bool isHadled = false;
+            Dictionary<string, WSAStoreLicense> ownedProducts;
             try
             {
                 await UniTask.Delay(_initializationDelayMs);
-                StoreInitialize();
-                GetAppLicense();
+                WSANativeCore.Initialise();
+                var license = WSANativeStore.GetAppLicense();
             }
             catch (Exception e)
             {
                 _callbacks.InitializeFailed?.Invoke(e.Message);
                 return;
             }
-
+            
             try
             {
                 await UniTask.Delay(100);
-
-                GetAddOns(response =>
+                
+                WSANativeStore.GetAddOns(response =>
                 {
-                    if (response.Error != null)
-                    {
-                        _callbacks.InitializeFailed?.Invoke(response.Error.Message);
-                        return;
-                    }
-
                     _products = response.Products;
 
                     foreach (var premiumProduct in _premiumProducts)
@@ -85,8 +79,9 @@ namespace Services.Purchasing
                             return;
                         }
                     }
-
+                
                     _callbacks.Initialized?.Invoke();
+                    isHadled = true;
                 });
             }
             catch (Exception e)
@@ -94,21 +89,29 @@ namespace Services.Purchasing
                 _callbacks.InitializeFailed?.Invoke(e.Message);
                 return;
             }
-
+        
+            if (isHadled)
+                return;
+        
 #if UNITY_EDITOR
+            bool isPurchased =
+                UnityEditor.EditorUtility.DisplayDialog("Confirm initialization", "Is initialization successful?", "Success", "Cancel");     
+            if (isPurchased == false)
+            {
+                _callbacks.InitializeFailed?.Invoke("Initialization is set to fail");
+                return;
+            }
+        
             foreach (var iapProductBase in _premiumProducts)
             {
-                if (_products.ContainsKey(iapProductBase.GetId()) == false)
+                _products.Add(iapProductBase.GetId(), new WSAStoreProduct()
                 {
-                    _products.Add(iapProductBase.GetId(), new WinStoreProduct()
-                    {
-                        Description = "Debug product",
-                        FormattedPrice = "debug1$",
-                        IsInUserCollection = false,
-                        Title = "Debug product",
-                        StoreId = iapProductBase.GetId(),
-                    });
-                }
+                    Description = "Debug product",
+                    FormattedPrice = "debug1$",
+                    IsInUserCollection = false,
+                    Title = "Debug product",
+                    StoreId = iapProductBase.GetId(),
+                });
             }
             _callbacks.Initialized?.Invoke();
 #endif
@@ -116,14 +119,15 @@ namespace Services.Purchasing
 
         protected override void PurchaseProduct(IAPProductBase product)
         {
+            bool isHadled = false;
             try
             {
-                RequestPurchase(product.GetId(), result =>
+                WSANativeStore.RequestPurchase(product.GetId(), result =>
                 {
                     switch (result.Status)
                     {
-                        case WinStorePurchaseStatus.AlreadyPurchased:
-                        case WinStorePurchaseStatus.Succeeded:
+                        case WSAStorePurchaseStatus.AlreadyPurchased:
+                        case WSAStorePurchaseStatus.Succeeded:
                             _isDebugPremium = true;
                             _callbacks.ProductPurchased?.Invoke(product);
                             break;
@@ -132,245 +136,30 @@ namespace Services.Purchasing
                             _callbacks.ProductPurchaseFailed?.Invoke(product, exception.Message);
                             break;
                     }
+                    isHadled = true;
                 });
             }
             catch (Exception e)
             {
                 _callbacks.ProductPurchaseFailed?.Invoke(product, e.Message);
+                isHadled = true;
             }
-
+        
+            if (isHadled)
+                return;
+        
 #if UNITY_EDITOR
             bool isPurchased =
-                UnityEditor.EditorUtility.DisplayDialog("Purchase confirm", "Is purchase successful?", "Success", "Cancel");
+                UnityEditor.EditorUtility.DisplayDialog("Purchase confirm", "Is purchase successful?", "Success", "Cancel");     
             if (isPurchased == false)
             {
-                _callbacks.ProductPurchaseFailed?.Invoke(product, "User cancelled");
+                _callbacks.ProductPurchaseFailed?.Invoke( product, "User cancelled");
                 return;
             }
-
+        
             _isDebugPremium = true;
             _callbacks.ProductPurchased?.Invoke(product);
 #endif
         }
-
-        #region Internal Logic
-
-#if ENABLE_WINMD_SUPPORT
-        [DllImport("__Internal")]
-        private static extern int GetPageContent([MarshalAs(UnmanagedType.IInspectable)] object frame, [MarshalAs(UnmanagedType.IInspectable)] out object pageContent);
-        private static SwapChainPanel DxSwapChainPanel { get; set; }
-        private static bool _isInitialised;
-#endif
-
-        private void StoreInitialize()
-        {
-#if ENABLE_WINMD_SUPPORT
-            if (!_isInitialised)
-            {
-                RunOnUIThread(() =>
-                {
-                    object pageContent;
-                    var result = GetPageContent(Window.Current.Content, out pageContent);
-                    if (result < 0)
-                    {
-                        Marshal.ThrowExceptionForHR(result);
-                    }
-                    DxSwapChainPanel = pageContent as SwapChainPanel;
-                    _isInitialised = DxSwapChainPanel != null;
-                });
-            }
-#endif
-        }
-
-        private WinStoreAppLicense GetAppLicense()
-        {
-#if ENABLE_WINMD_SUPPORT
-            var result = StoreContext.GetDefault().GetAppLicenseAsync().AsTask().Result;
-
-            return new WinStoreAppLicense()
-            {
-                AddOnLicenses = result.AddOnLicenses.ToDictionary(x => x.Key, y => new WinStoreLicense()
-                {
-                    ExpirationDate = y.Value.ExpirationDate,
-                    InAppOfferToken = y.Value.InAppOfferToken,
-                    IsActive = y.Value.IsActive,
-                    StoreId = y.Value.SkuStoreId
-                }),
-                ExpirationDate = result.ExpirationDate,
-                IsActive = result.IsActive,
-                IsTrial = result.IsTrial,
-                StoreId = result.SkuStoreId,
-                TrialTimeRemaining = result.TrialTimeRemaining,
-                TrialUniqueId = result.TrialUniqueId
-            };
-#else
-            return new WinStoreAppLicense();
-#endif
-        }
-
-        private void GetAddOns(Action<WinStoreProductQueryResult> response)
-        {
-#if ENABLE_WINMD_SUPPORT
-            GetAddOnsAsync(response);
-#endif
-        }
-
-#if ENABLE_WINMD_SUPPORT
-        private async void GetAddOnsAsync(Action<WinStoreProductQueryResult> response)
-        {
-            string[] productKinds = { "Durable", "Consumable", "UnmanagedConsumable" };
-
-            var result = await StoreContext.GetDefault().GetAssociatedStoreProductsAsync(productKinds.ToList());
-
-            WinStoreProductQueryResult storeProductQuery = new WinStoreProductQueryResult()
-            {
-                Products = result.Products.ToDictionary(x => x.Key, y =>
-                {
-                    bool IsZeroPrice(string formattedPrice)
-                    {
-                        if (string.IsNullOrEmpty(formattedPrice)) return true;
-                        return formattedPrice.All(c => !char.IsDigit(c) || c == '0');
-                    }
-
-                    var validSku = y.Value.Skus.FirstOrDefault(s => s.Price.FormattedPrice != null && !IsZeroPrice(s.Price.FormattedPrice) && s.SubscriptionInfo == null);
-                    if (validSku == null)
-                    {
-                        validSku = y.Value.Skus.FirstOrDefault(s => s.Price.FormattedPrice != null && !IsZeroPrice(s.Price.FormattedPrice));
-                    }
-
-                    if (validSku == null && y.Value.Skus.Count > 1)
-                        validSku = y.Value.Skus[1];
-                    if (validSku == null)
-                        validSku = y.Value.Skus.FirstOrDefault();
-
-                    return new WinStoreProduct()
-                    {
-                        Description = y.Value.Description,
-                        FormattedPrice = validSku != null ? validSku.Price.FormattedPrice : y.Value.Price.FormattedPrice,
-                        InAppOfferToken = y.Value.InAppOfferToken,
-                        IsInUserCollection = y.Value.IsInUserCollection,
-                        StoreId = y.Value.StoreId,
-                        Title = y.Value.Title,
-                    };
-                }),
-                Error = result.ExtendedError
-            };
-
-            if (response != null)
-            {
-                response(storeProductQuery);
-            }
-        }
-#endif
-
-        private void RequestPurchase(string storeId, Action<WinStorePurchaseResult> response)
-        {
-#if ENABLE_WINMD_SUPPORT
-            RunOnUIThread(async () =>
-            {
-                var result = await StoreContext.GetDefault().RequestPurchaseAsync(storeId);
-
-                WinStorePurchaseResult storePurchaseResult = new WinStorePurchaseResult()
-                {
-                    Error = result.ExtendedError,
-                    Status = (WinStorePurchaseStatus)result.Status
-                };
-
-                RunOnAppThread(() =>
-                {
-                    if (response != null)
-                    {
-                        response(storePurchaseResult);
-                    }
-                }, true);
-            });
-#endif
-        }
-
-        private void RunOnUIThread(Action action, bool waitUntilDone = false)
-        {
-#if ENABLE_WINMD_SUPPORT
-            if (UnityEngine.WSA.Application.RunningOnUIThread())
-            {
-                action();
-            }
-            else
-            {
-                UnityEngine.WSA.Application.InvokeOnUIThread(() =>
-                {
-                    action();
-                }, waitUntilDone);
-            }
-#endif
-        }
-
-        private void RunOnAppThread(Action action, bool waitUntilDone = false)
-        {
-#if ENABLE_WINMD_SUPPORT
-            if (UnityEngine.WSA.Application.RunningOnAppThread())
-            {
-                action();
-            }
-            else
-            {
-                UnityEngine.WSA.Application.InvokeOnAppThread(() =>
-                {
-                    action();
-                }, waitUntilDone);
-            }
-#endif
-        }
-
-        public class WinStoreProduct
-        {
-            public string Description { get; set; }
-            public string InAppOfferToken { get; set; }
-            public bool IsInUserCollection { get; set; }
-            public string FormattedPrice { get; set; }
-            public string StoreId { get; set; }
-            public string Title { get; set; }
-        }
-
-        public class WinStorePurchaseResult
-        {
-            public WinStorePurchaseStatus Status { get; set; }
-            public Exception Error { get; set; }
-        }
-
-        public enum WinStorePurchaseStatus
-        {
-            Succeeded = 0,
-            AlreadyPurchased = 1,
-            NotPurchased = 2,
-            NetworkError = 3,
-            ServerError = 4
-        }
-
-        public class WinStoreProductQueryResult
-        {
-            public Dictionary<string, WinStoreProduct> Products { get; set; }
-            public Exception Error { get; set; }
-        }
-
-        public class WinStoreLicense
-        {
-            public DateTimeOffset ExpirationDate { get; set; }
-            public string InAppOfferToken { get; set; }
-            public bool IsActive { get; set; }
-            public string StoreId { get; set; }
-        }
-
-        public class WinStoreAppLicense
-        {
-            public Dictionary<string, WinStoreLicense> AddOnLicenses { get; set; }
-            public DateTimeOffset ExpirationDate { get; set; }
-            public bool IsActive { get; set; }
-            public bool IsTrial { get; set; }
-            public string StoreId { get; set; }
-            public TimeSpan TrialTimeRemaining { get; set; }
-            public string TrialUniqueId { get; set; }
-        }
-
-        #endregion
     }
 }

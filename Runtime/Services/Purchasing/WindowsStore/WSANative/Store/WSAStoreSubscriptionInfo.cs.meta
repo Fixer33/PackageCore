@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 1d10610d19c1f8e42bdba0ee05a36b0b
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 54715
+  packageName: Native Plugin for Universal Windows Platform
+  packageVersion: 3.0.0
+  assetPath: Assets/WSANative/Store/WSAStoreSubscriptionInfo.cs
+  uploadId: 666178
