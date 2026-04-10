@@ -19,17 +19,30 @@ namespace Core.Services
         public static bool AreServicesInitialized { get; private set; }
         public static event Action ServicesInitialized;
 
-        private ServiceScriptableObject[] _services;
+        private readonly ServiceScriptableObject[] _services;
+        private readonly string _unityServicesEnvironment;
 
-        public ServiceInitializer(ServiceScriptableObject[] services)
+        public ServiceInitializer(ServiceScriptableObject[] services, string unityServicesEnvironment)
         {
             _services = services;
+            _unityServicesEnvironment = unityServicesEnvironment;
         }
         
         public async void Initialize()
         {
 #if USE_UNITY_SERVICES
             var options = new InitializationOptions();
+            if (string.IsNullOrEmpty(_unityServicesEnvironment) == false)
+            {
+                try
+                {
+                    options = options.SetOption("com.unity.services.core.environment-name", _unityServicesEnvironment);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"Failed to set Unity Services environment name to {_unityServicesEnvironment}. Reason: {e.Message}");
+                }
+            }
             await UnityServices.InitializeAsync(options);
 #endif
             

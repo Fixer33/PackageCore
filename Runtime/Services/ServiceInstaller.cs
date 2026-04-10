@@ -9,10 +9,17 @@ namespace Core.Services
     public class ServiceInstaller : ScriptableObjectInstaller
     {
         [SerializeField] private PlatformDependentReference<ServiceScriptableObject[]> _services;
+        [Header("Optional")]
+        [Tooltip("Unity Services environment name. Leave empty to use default")]
+        [SerializeField] private PlatformDependentReference<string> _unityServicesEnvironment;
         
         public override void InstallBindings()
         {
-            Container.BindInterfacesAndSelfTo<ServiceInitializer>().FromNew().AsSingle().WithArguments(_services.Get());
+            Container
+                .BindInterfacesAndSelfTo<ServiceInitializer>()
+                .FromNew()
+                .AsSingle()
+                .WithArguments(_services.Get(), _unityServicesEnvironment.Get());
         }
     }
 }
