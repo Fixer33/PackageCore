@@ -1,3 +1,13 @@
+## [2.2.0] - 2026-04-10
+
+### Added
+- Setting unity services environment name (optional)
+- Added Microsoft Store IAP
+- Added UWP fullscreen services
+
+### Changed
+- Unity IAP attempted to fix premium reset after few days owning IAP
+
 ## [2.1.1] - 2026-03-25
 
 ### Changed
@@ -8,7 +18,7 @@
 ### Added
 - `MinMax` and `MinMaxInt` utility structs with Random and Clamp helpers.
 - `DebugIAP` implementation for simulating in-app purchases in editor/testing.
-- 
+
 ### Fixed
 - IAP crashes on MAC and iOS
 
