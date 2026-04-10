@@ -19,14 +19,14 @@ namespace Services.Purchasing
     public class WinStoreIAP : IAP
     {
         [SerializeField] private int _initializationDelayMs = 1500;
-        private Dictionary<string, StoreProduct> _products = new Dictionary<string, StoreProduct>();
+        private Dictionary<string, WinStoreProduct> _products = new Dictionary<string, WinStoreProduct>();
         private EventCallbackCollection _callbacks;
 
         public override string GetProductCost(IAPProductBase product)
         {
             string id = product.GetId();
 
-            if (_products.TryGetValue(id, out StoreProduct productData) == false)
+            if (_products.TryGetValue(id, out WinStoreProduct productData) == false)
                 return "no-product-found";
 
             return productData.FormattedPrice;
@@ -36,7 +36,7 @@ namespace Services.Purchasing
         {
             string id = product.GetId();
 
-            if (_products.TryGetValue(id, out StoreProduct productData) == false)
+            if (_products.TryGetValue(id, out WinStoreProduct productData) == false)
                 return false;
 
             return productData.IsInUserCollection;
@@ -100,7 +100,7 @@ namespace Services.Purchasing
             {
                 if (_products.ContainsKey(iapProductBase.GetId()) == false)
                 {
-                    _products.Add(iapProductBase.GetId(), new StoreProduct()
+                    _products.Add(iapProductBase.GetId(), new WinStoreProduct()
                     {
                         Description = "Debug product",
                         FormattedPrice = "debug1$",
@@ -122,8 +122,8 @@ namespace Services.Purchasing
                 {
                     switch (result.Status)
                     {
-                        case StorePurchaseStatus.AlreadyPurchased:
-                        case StorePurchaseStatus.Succeeded:
+                        case WinStorePurchaseStatus.AlreadyPurchased:
+                        case WinStorePurchaseStatus.Succeeded:
                             _isDebugPremium = true;
                             _callbacks.ProductPurchased?.Invoke(product);
                             break;
@@ -182,14 +182,14 @@ namespace Services.Purchasing
 #endif
         }
 
-        private StoreAppLicense GetAppLicense()
+        private WinStoreAppLicense GetAppLicense()
         {
 #if ENABLE_WINMD_SUPPORT
             var result = StoreContext.GetDefault().GetAppLicenseAsync().AsTask().Result;
 
-            return new StoreAppLicense()
+            return new WinStoreAppLicense()
             {
-                AddOnLicenses = result.AddOnLicenses.ToDictionary(x => x.Key, y => new StoreLicense()
+                AddOnLicenses = result.AddOnLicenses.ToDictionary(x => x.Key, y => new WinStoreLicense()
                 {
                     ExpirationDate = y.Value.ExpirationDate,
                     InAppOfferToken = y.Value.InAppOfferToken,
@@ -204,11 +204,11 @@ namespace Services.Purchasing
                 TrialUniqueId = result.TrialUniqueId
             };
 #else
-            return new StoreAppLicense();
+            return new WinStoreAppLicense();
 #endif
         }
 
-        private void GetAddOns(Action<StoreProductQueryResult> response)
+        private void GetAddOns(Action<WinStoreProductQueryResult> response)
         {
 #if ENABLE_WINMD_SUPPORT
             GetAddOnsAsync(response);
@@ -216,13 +216,13 @@ namespace Services.Purchasing
         }
 
 #if ENABLE_WINMD_SUPPORT
-        private async void GetAddOnsAsync(Action<StoreProductQueryResult> response)
+        private async void GetAddOnsAsync(Action<WinStoreProductQueryResult> response)
         {
             string[] productKinds = { "Durable", "Consumable", "UnmanagedConsumable" };
 
-            StoreProductQueryResult result = await StoreContext.GetDefault().GetAssociatedStoreProductsAsync(productKinds.ToList());
+            var result = await StoreContext.GetDefault().GetAssociatedStoreProductsAsync(productKinds.ToList());
 
-            StoreProductQueryResult storeProductQuery = new StoreProductQueryResult()
+            WinStoreProductQueryResult storeProductQuery = new WinStoreProductQueryResult()
             {
                 Products = result.Products.ToDictionary(x => x.Key, y =>
                 {
@@ -243,7 +243,7 @@ namespace Services.Purchasing
                     if (validSku == null)
                         validSku = y.Value.Skus.FirstOrDefault();
 
-                    return new StoreProduct()
+                    return new WinStoreProduct()
                     {
                         Description = y.Value.Description,
                         FormattedPrice = validSku != null ? validSku.Price.FormattedPrice : y.Value.Price.FormattedPrice,
@@ -263,17 +263,17 @@ namespace Services.Purchasing
         }
 #endif
 
-        private void RequestPurchase(string storeId, Action<StorePurchaseResult> response)
+        private void RequestPurchase(string storeId, Action<WinStorePurchaseResult> response)
         {
 #if ENABLE_WINMD_SUPPORT
             RunOnUIThread(async () =>
             {
-                StorePurchaseResult result = await StoreContext.GetDefault().RequestPurchaseAsync(storeId);
+                var result = await StoreContext.GetDefault().RequestPurchaseAsync(storeId);
 
-                StorePurchaseResult storePurchaseResult = new StorePurchaseResult()
+                WinStorePurchaseResult storePurchaseResult = new WinStorePurchaseResult()
                 {
                     Error = result.ExtendedError,
-                    Status = (StorePurchaseStatus)result.Status
+                    Status = (WinStorePurchaseStatus)result.Status
                 };
 
                 RunOnAppThread(() =>
@@ -321,7 +321,7 @@ namespace Services.Purchasing
 #endif
         }
 
-        public class StoreProduct
+        public class WinStoreProduct
         {
             public string Description { get; set; }
             public string InAppOfferToken { get; set; }
@@ -331,13 +331,13 @@ namespace Services.Purchasing
             public string Title { get; set; }
         }
 
-        public class StorePurchaseResult
+        public class WinStorePurchaseResult
         {
-            public StorePurchaseStatus Status { get; set; }
+            public WinStorePurchaseStatus Status { get; set; }
             public Exception Error { get; set; }
         }
 
-        public enum StorePurchaseStatus
+        public enum WinStorePurchaseStatus
         {
             Succeeded = 0,
             AlreadyPurchased = 1,
@@ -346,13 +346,13 @@ namespace Services.Purchasing
             ServerError = 4
         }
 
-        public class StoreProductQueryResult
+        public class WinStoreProductQueryResult
         {
-            public Dictionary<string, StoreProduct> Products { get; set; }
+            public Dictionary<string, WinStoreProduct> Products { get; set; }
             public Exception Error { get; set; }
         }
 
-        public class StoreLicense
+        public class WinStoreLicense
         {
             public DateTimeOffset ExpirationDate { get; set; }
             public string InAppOfferToken { get; set; }
@@ -360,9 +360,9 @@ namespace Services.Purchasing
             public string StoreId { get; set; }
         }
 
-        public class StoreAppLicense
+        public class WinStoreAppLicense
         {
-            public Dictionary<string, StoreLicense> AddOnLicenses { get; set; }
+            public Dictionary<string, WinStoreLicense> AddOnLicenses { get; set; }
             public DateTimeOffset ExpirationDate { get; set; }
             public bool IsActive { get; set; }
             public bool IsTrial { get; set; }
