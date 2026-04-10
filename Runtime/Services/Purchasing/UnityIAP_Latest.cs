@@ -37,7 +37,8 @@ namespace Core.Services.Purchasing
             _storeController.OnPurchaseFailed += OnPurchaseFailed;
             
             await _storeController.Connect();
-  
+
+            CatalogProvider catalog = new();
             var initialProductsToFetch = new List<ProductDefinition>();
             
             _allProducts = new List<IAPProductBase>(_premiumProducts);
@@ -233,19 +234,27 @@ namespace Core.Services.Purchasing
 
         private void OnPurchasesFetched(Orders orders)
         {
-            // Process purchases, e.g. check for entitlements from completed orders
+            if (orders == null)
+                return;
 
-            foreach (var purchasedProductInfo in orders.ConfirmedOrders.SelectMany(i => i.Info.PurchasedProductInfo))
+            bool isPremiumPurchasedOld = IsPremiumPurchased();
+            List<Order> orderList = new List<Order>(orders.PendingOrders);
+            orderList.AddRange(orders.PendingOrders);
+            foreach (var purchasedProductInfo in orderList.SelectMany(i => i.Info.PurchasedProductInfo))
             {
                 if (purchasedProductInfo.subscriptionInfo == null)
                     continue;
 
                 bool isSubscribed = purchasedProductInfo.subscriptionInfo.IsSubscribed() == Result.True;
+
                 if (_subscriptionsCache.ContainsKey(purchasedProductInfo.productId) == false)
                     _subscriptionsCache.Add(purchasedProductInfo.productId, isSubscribed);
                 else
                     _subscriptionsCache[purchasedProductInfo.productId] |= isSubscribed;
             }
+            
+            if (IsPremiumPurchased() && isPremiumPurchasedOld == false)
+                TriggerPremiumPurchasedEvent();
         }
         
         private void OnPurchaseFailed(FailedOrder failedOrder)

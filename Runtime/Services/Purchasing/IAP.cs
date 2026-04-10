@@ -106,6 +106,8 @@ namespace Core.Services.Purchasing
         }
 
         protected abstract void PurchaseProduct(IAPProductBase product);
+        
+        protected void TriggerPremiumPurchasedEvent() => PremiumPurchased?.Invoke();
 
         private void PurchaseFailedCallback(IAPProductBase product, string errormessage)
         {
@@ -139,7 +141,7 @@ namespace Core.Services.Purchasing
             {
                 if (_premiumProducts[i].Equals(product))
                 {
-                    PremiumPurchased?.Invoke();
+                    TriggerPremiumPurchasedEvent();
                     break;
                 }
             }
@@ -148,6 +150,7 @@ namespace Core.Services.Purchasing
         private void InitializeFailedCallback(string errormessage)
         {
             Debug.LogError("IAP initialization failed. " + errormessage);
+            InitializeFailed?.Invoke();
             
             _isWaitingForInitialization = false;
         }
