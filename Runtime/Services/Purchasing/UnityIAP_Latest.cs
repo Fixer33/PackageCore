@@ -237,6 +237,9 @@ namespace Core.Services.Purchasing
             if (orders == null)
                 return;
 
+            if (IsInitialized == false)
+                return;
+            
             bool isPremiumPurchasedOld = IsPremiumPurchased();
             List<Order> orderList = new List<Order>(orders.PendingOrders);
             orderList.AddRange(orders.PendingOrders);
