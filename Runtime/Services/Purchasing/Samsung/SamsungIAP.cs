@@ -20,6 +20,8 @@ namespace Core.Services.Purchasing.Samsung
         }
         
         [SerializeField] private bool _freeTrialAvailable;
+        [SerializeField] private SamsungGameObject.BuildMode _buildMode = SamsungGameObject.BuildMode.Production;
+        [SerializeField] private SamsungGameObject.TestResult _testResult = SamsungGameObject.TestResult.Success;
         [SerializeField] private IAPProductBase[] _additionalProducts = Array.Empty<IAPProductBase>();
         private SamsungGameObject _samsungGameObject;
         private Dictionary<string, ProductData> _productsInfo;
@@ -72,7 +74,7 @@ namespace Core.Services.Purchasing.Samsung
             _samsungGameObject.Initialize(_iapInstance, initializeFailed: () =>
             {
                 callbacksToInvoke.InitializeFailed?.Invoke("Failed to get instance of Samsung IAP java class!");
-            });
+            }, _buildMode, _testResult);
             
             _samsungGameObject.GetOwnedList(SamsungGameObject.ItemType.all, productList =>
             {
