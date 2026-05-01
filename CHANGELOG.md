@@ -1,5 +1,10 @@
 ## [2.2.1] - 2026-04-30
 
+### Added
+- Added month price division for Subscriptions
+
+## [2.2.1] - 2026-04-30
+
 ### Updated
 - Samsung IAP to version 6.3.2
 
