@@ -100,8 +100,19 @@ namespace Core.Services.Purchasing
             }
             else if (data is IAPNonConsumable nonConsumable)
             {
+                if (_productsCache.TryGetValue(nonConsumable.GetId(), out var unityProduct))
+                {
+                    if (unityProduct.hasReceipt)
+                    {
+                        if (_saveNonConsumables)
+                            DataSaver.SetValueCustomKey(nonConsumable, true);
+                        return true;
+                    }
+                }
+
                 if (_saveNonConsumables == false)
                     return false;
+                
                 return DataSaver.GetValueCustomKey(nonConsumable) == true;
             }
 
@@ -203,6 +214,14 @@ namespace Core.Services.Purchasing
             _isDebugPremium = true;
 #endif
             
+            if (product is IAPConsumable consumable)
+            {
+                // In Unity IAP "New" API (4.1.0+), ConfirmPurchase handles both acknowledgment and consumption for consumables.
+                _storeController.ConfirmPurchase(order);
+                _callbacks.ProductPurchased?.Invoke(product);
+                return;
+            }
+
             if (product is IAPNonConsumable nonConsumable && _saveNonConsumables)
             {
                 DataSaver.SetValueCustomKey(nonConsumable, true);
@@ -237,13 +256,10 @@ namespace Core.Services.Purchasing
             if (orders == null)
                 return;
 
-            if (IsInitialized == false)
-                return;
-            
             bool isPremiumPurchasedOld = IsPremiumPurchased();
-            List<Order> orderList = new List<Order>(orders.PendingOrders);
-            orderList.AddRange(orders.PendingOrders);
-            foreach (var purchasedProductInfo in orderList.SelectMany(i => i.Info.PurchasedProductInfo))
+            
+            // Sync subscriptions
+            foreach (var purchasedProductInfo in orders.PendingOrders.SelectMany(i => i.Info.PurchasedProductInfo))
             {
                 if (purchasedProductInfo.subscriptionInfo == null)
                     continue;
@@ -254,6 +270,24 @@ namespace Core.Services.Purchasing
                     _subscriptionsCache.Add(purchasedProductInfo.productId, isSubscribed);
                 else
                     _subscriptionsCache[purchasedProductInfo.productId] |= isSubscribed;
+            }
+
+            // Sync non-consumables
+            foreach (var product in _allProducts)
+            {
+                if (product is IAPNonConsumable nonConsumable)
+                {
+                    if (_productsCache.TryGetValue(nonConsumable.GetId(), out var unityProduct))
+                    {
+                        if (unityProduct.hasReceipt)
+                        {
+                            if (_saveNonConsumables)
+                            {
+                                DataSaver.SetValueCustomKey(nonConsumable, true);
+                            }
+                        }
+                    }
+                }
             }
             
             if (IsPremiumPurchased() && isPremiumPurchasedOld == false)
