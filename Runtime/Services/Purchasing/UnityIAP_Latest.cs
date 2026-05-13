@@ -214,11 +214,6 @@ namespace Core.Services.Purchasing
             _isDebugPremium = true;
 #endif
             
-            if (product is IAPConsumable consumable)
-            {
-                consumable.Consume();
-            }
-
             if (product is IAPNonConsumable nonConsumable && _saveNonConsumables)
             {
                 DataSaver.SetValueCustomKey(nonConsumable, true);
