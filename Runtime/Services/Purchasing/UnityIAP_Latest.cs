@@ -216,10 +216,7 @@ namespace Core.Services.Purchasing
             
             if (product is IAPConsumable consumable)
             {
-                // In Unity IAP "New" API (4.1.0+), ConfirmPurchase handles both acknowledgment and consumption for consumables.
-                _storeController.ConfirmPurchase(order);
-                _callbacks.ProductPurchased?.Invoke(product);
-                return;
+                consumable.Consume();
             }
 
             if (product is IAPNonConsumable nonConsumable && _saveNonConsumables)

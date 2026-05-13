@@ -8,9 +8,15 @@ namespace Core.Services.Purchasing.Products
     {
         public event Action Consumed;
         
-        public void Consume()
+        internal void Consume()
         {
+            OnConsume();
             Consumed?.Invoke();
+        }
+        
+        protected virtual void OnConsume()
+        {
+            
         }
     }
 }
