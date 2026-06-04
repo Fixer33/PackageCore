@@ -58,6 +58,48 @@ namespace Core.Editor.Utilities
 
             return container;
         }
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            EditorGUI.BeginProperty(position, label, property);
+
+            position = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), label);
+
+            var indent = EditorGUI.indentLevel;
+            EditorGUI.indentLevel = 0;
+
+            var minRect = new Rect(position.x, position.y, position.width / 2 - 5, position.height);
+            var maxRect = new Rect(position.x + position.width / 2 + 5, position.y, position.width / 2 - 5, position.height);
+
+            var minProp = property.FindPropertyRelative("Min");
+            var maxProp = property.FindPropertyRelative("Max");
+
+            EditorGUI.BeginChangeCheck();
+            float min = EditorGUI.FloatField(minRect, "Min", minProp.floatValue);
+            if (EditorGUI.EndChangeCheck())
+            {
+                minProp.floatValue = min;
+                if (minProp.floatValue > maxProp.floatValue)
+                {
+                    maxProp.floatValue = minProp.floatValue;
+                }
+            }
+
+            EditorGUI.BeginChangeCheck();
+            float max = EditorGUI.FloatField(maxRect, "Max", maxProp.floatValue);
+            if (EditorGUI.EndChangeCheck())
+            {
+                maxProp.floatValue = max;
+                if (maxProp.floatValue < minProp.floatValue)
+                {
+                    minProp.floatValue = maxProp.floatValue;
+                }
+            }
+
+            EditorGUI.indentLevel = indent;
+
+            EditorGUI.EndProperty();
+        }
     }
 
     [CustomPropertyDrawer(typeof(MinMaxInt))]
@@ -112,6 +154,48 @@ namespace Core.Editor.Utilities
             container.Add(maxField);
 
             return container;
+        }
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            EditorGUI.BeginProperty(position, label, property);
+
+            position = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), label);
+
+            var indent = EditorGUI.indentLevel;
+            EditorGUI.indentLevel = 0;
+
+            var minRect = new Rect(position.x, position.y, position.width / 2 - 5, position.height);
+            var maxRect = new Rect(position.x + position.width / 2 + 5, position.y, position.width / 2 - 5, position.height);
+
+            var minProp = property.FindPropertyRelative("Min");
+            var maxProp = property.FindPropertyRelative("Max");
+
+            EditorGUI.BeginChangeCheck();
+            int min = EditorGUI.IntField(minRect, "Min", minProp.intValue);
+            if (EditorGUI.EndChangeCheck())
+            {
+                minProp.intValue = min;
+                if (minProp.intValue > maxProp.intValue)
+                {
+                    maxProp.intValue = minProp.intValue;
+                }
+            }
+
+            EditorGUI.BeginChangeCheck();
+            int max = EditorGUI.IntField(maxRect, "Max", maxProp.intValue);
+            if (EditorGUI.EndChangeCheck())
+            {
+                maxProp.intValue = max;
+                if (maxProp.intValue < minProp.intValue)
+                {
+                    minProp.intValue = maxProp.intValue;
+                }
+            }
+
+            EditorGUI.indentLevel = indent;
+
+            EditorGUI.EndProperty();
         }
     }
 }
