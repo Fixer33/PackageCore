@@ -14,9 +14,16 @@ namespace Core.Editor.Utilities
             container.style.flexDirection = FlexDirection.Row;
 
             var label = new Label(property.displayName);
-            label.style.width = 120; // Standard label width or similar
-            label.style.unityTextAlign = TextAnchor.MiddleLeft;
+            label.AddToClassList("unity-property-field__label");
+            // Instead of fixed width, let's use the standard property label behavior
+            label.style.width = StyleKeyword.Auto;
+            label.style.minWidth = 120;
+            label.style.flexShrink = 0;
             container.Add(label);
+
+            var contentContainer = new VisualElement();
+            contentContainer.style.flexDirection = FlexDirection.Row;
+            contentContainer.style.flexGrow = 1;
 
             var minProp = property.FindPropertyRelative("Min");
             var maxProp = property.FindPropertyRelative("Max");
@@ -24,14 +31,14 @@ namespace Core.Editor.Utilities
             var minField = new FloatField("Min")
             {
                 bindingPath = minProp.propertyPath,
-                style = { flexGrow = 1 }
+                style = { flexGrow = 1, marginLeft = 2, marginRight = 2 }
             };
             minField.labelElement.style.minWidth = 30;
 
             var maxField = new FloatField("Max")
             {
                 bindingPath = maxProp.propertyPath,
-                style = { flexGrow = 1 }
+                style = { flexGrow = 1, marginLeft = 2, marginRight = 2 }
             };
             maxField.labelElement.style.minWidth = 30;
 
@@ -53,26 +60,36 @@ namespace Core.Editor.Utilities
                 }
             });
 
-            container.Add(minField);
-            container.Add(maxField);
+            contentContainer.Add(minField);
+            contentContainer.Add(maxField);
+            container.Add(contentContainer);
 
             return container;
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            EditorGUI.BeginProperty(position, label, property);
+            label = EditorGUI.BeginProperty(position, label, property);
 
+            // Draw label
             position = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), label);
 
+            // Don't make child fields be indented
             var indent = EditorGUI.indentLevel;
             EditorGUI.indentLevel = 0;
 
-            var minRect = new Rect(position.x, position.y, position.width / 2 - 5, position.height);
-            var maxRect = new Rect(position.x + position.width / 2 + 5, position.y, position.width / 2 - 5, position.height);
+            // Calculate rects
+            float gap = 5;
+            float width = (position.width - gap) / 2;
+            var minRect = new Rect(position.x, position.y, width, position.height);
+            var maxRect = new Rect(position.x + width + gap, position.y, width, position.height);
 
             var minProp = property.FindPropertyRelative("Min");
             var maxProp = property.FindPropertyRelative("Max");
+
+            // Store original label width to restore it for sub-fields
+            float originalLabelWidth = EditorGUIUtility.labelWidth;
+            EditorGUIUtility.labelWidth = 30; // Small label for "Min"/"Max"
 
             EditorGUI.BeginChangeCheck();
             float min = EditorGUI.FloatField(minRect, "Min", minProp.floatValue);
@@ -96,6 +113,7 @@ namespace Core.Editor.Utilities
                 }
             }
 
+            EditorGUIUtility.labelWidth = originalLabelWidth;
             EditorGUI.indentLevel = indent;
 
             EditorGUI.EndProperty();
@@ -111,9 +129,15 @@ namespace Core.Editor.Utilities
             container.style.flexDirection = FlexDirection.Row;
 
             var label = new Label(property.displayName);
-            label.style.width = 120; // Standard label width or similar
-            label.style.unityTextAlign = TextAnchor.MiddleLeft;
+            label.AddToClassList("unity-property-field__label");
+            label.style.width = StyleKeyword.Auto;
+            label.style.minWidth = 120;
+            label.style.flexShrink = 0;
             container.Add(label);
+
+            var contentContainer = new VisualElement();
+            contentContainer.style.flexDirection = FlexDirection.Row;
+            contentContainer.style.flexGrow = 1;
 
             var minProp = property.FindPropertyRelative("Min");
             var maxProp = property.FindPropertyRelative("Max");
@@ -121,14 +145,14 @@ namespace Core.Editor.Utilities
             var minField = new IntegerField("Min")
             {
                 bindingPath = minProp.propertyPath,
-                style = { flexGrow = 1 }
+                style = { flexGrow = 1, marginLeft = 2, marginRight = 2 }
             };
             minField.labelElement.style.minWidth = 30;
 
             var maxField = new IntegerField("Max")
             {
                 bindingPath = maxProp.propertyPath,
-                style = { flexGrow = 1 }
+                style = { flexGrow = 1, marginLeft = 2, marginRight = 2 }
             };
             maxField.labelElement.style.minWidth = 30;
 
@@ -150,26 +174,32 @@ namespace Core.Editor.Utilities
                 }
             });
 
-            container.Add(minField);
-            container.Add(maxField);
+            contentContainer.Add(minField);
+            contentContainer.Add(maxField);
+            container.Add(contentContainer);
 
             return container;
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            EditorGUI.BeginProperty(position, label, property);
+            label = EditorGUI.BeginProperty(position, label, property);
 
             position = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), label);
 
             var indent = EditorGUI.indentLevel;
             EditorGUI.indentLevel = 0;
 
-            var minRect = new Rect(position.x, position.y, position.width / 2 - 5, position.height);
-            var maxRect = new Rect(position.x + position.width / 2 + 5, position.y, position.width / 2 - 5, position.height);
+            float gap = 5;
+            float width = (position.width - gap) / 2;
+            var minRect = new Rect(position.x, position.y, width, position.height);
+            var maxRect = new Rect(position.x + width + gap, position.y, width, position.height);
 
             var minProp = property.FindPropertyRelative("Min");
             var maxProp = property.FindPropertyRelative("Max");
+
+            float originalLabelWidth = EditorGUIUtility.labelWidth;
+            EditorGUIUtility.labelWidth = 30;
 
             EditorGUI.BeginChangeCheck();
             int min = EditorGUI.IntField(minRect, "Min", minProp.intValue);
@@ -193,6 +223,7 @@ namespace Core.Editor.Utilities
                 }
             }
 
+            EditorGUIUtility.labelWidth = originalLabelWidth;
             EditorGUI.indentLevel = indent;
 
             EditorGUI.EndProperty();
