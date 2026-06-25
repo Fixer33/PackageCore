@@ -1,5 +1,6 @@
 ﻿#if SAMSUNG_BUILD
 using System.Linq;
+using Core.Services.Purchasing.Products;
 using Object = UnityEngine.Object;
 #endif
 using System;
@@ -170,13 +171,48 @@ namespace Core.Services.Purchasing.Samsung
                     var data = _productsInfo[id];
                     data.IsOwned = true;
                     _productsInfo[id] = data;
-                    _callbacks.ProductPurchased?.Invoke(_currentPurchasedItem);
+
+                    if (_currentPurchasedItem is IAPConsumable)
+                    {
+                        _samsungGameObject.ConsumePurchasedItems(args.results.mPurchaseId, consumedList =>
+                        {
+                            if (consumedList.errorInfo != null && string.IsNullOrEmpty(consumedList.errorInfo.errorString) == false)
+                            {
+                                _callbacks.ProductPurchaseFailed?.Invoke(_currentPurchasedItem, consumedList.errorInfo.errorString);
+                                _currentPurchasedItem = null;
+                                return;
+                            }
+                            
+                            _callbacks.ProductPurchased?.Invoke(_currentPurchasedItem);
+                            _currentPurchasedItem = null;
+                        });
+                    }
+                    else if (_currentPurchasedItem is IAPNonConsumable)
+                    {
+                        _samsungGameObject.AcknowledgePurchases(args.results.mPurchaseId, consumedList =>
+                        {
+                            if (consumedList.errorInfo != null && string.IsNullOrEmpty(consumedList.errorInfo.errorString) == false)
+                            {
+                                _callbacks.ProductPurchaseFailed?.Invoke(_currentPurchasedItem, consumedList.errorInfo.errorString);
+                                _currentPurchasedItem = null;
+                                return;
+                            }
+                            
+                            _callbacks.ProductPurchased?.Invoke(_currentPurchasedItem);
+                            _currentPurchasedItem = null;
+                        });
+                    }
+                    else
+                    {
+                        _callbacks.ProductPurchased?.Invoke(_currentPurchasedItem);
+                        _currentPurchasedItem = null;
+                    }
                 }
                 catch (Exception e)
                 {
                     _callbacks.ProductPurchaseFailed?.Invoke(_currentPurchasedItem, e.Message);
+                    _currentPurchasedItem = null;
                 }
-                _currentPurchasedItem = null;
             });
         }
 

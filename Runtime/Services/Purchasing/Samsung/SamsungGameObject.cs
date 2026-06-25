@@ -98,6 +98,12 @@ namespace Core.Services.Purchasing.Samsung
             _iapInstance.Call("consumePurchasedItems", purchaseIDs);
         }
 
+        public void AcknowledgePurchases(string purchaseIDs, System.Action<ConsumedList> listener)
+        {
+            onConsumePurchasedItemListener = listener;
+            _iapInstance.Call("acknowledgePurchases", purchaseIDs);
+        }
+
         public void GetPromotionEligibility(string itemIDs, System.Action<PromotionEligibilityList> listener)
         {
             onGetPromotionEligibilityListener = listener;
