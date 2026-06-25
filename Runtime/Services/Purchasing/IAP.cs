@@ -192,7 +192,8 @@ namespace Core.Services.Purchasing
 
         public static bool IsPremiumPurchased()
         {
-            Validate();
+            if (IsInitialized == false)
+                return false;
 
 #if UNITY_EDITOR
             if (Instance._isDebugPremium)
