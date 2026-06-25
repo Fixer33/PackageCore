@@ -53,8 +53,6 @@ namespace Core.Services.Purchasing
             }
   
             _storeController.FetchProducts(initialProductsToFetch);
-            
-            StoreSync(_subscriptionStoreSyncTime);
         }
 
 
@@ -238,9 +236,6 @@ namespace Core.Services.Purchasing
             }
 
             _storeController.FetchPurchases();
-            
-            if (IsInitialized == false)
-                _callbacks.Initialized?.Invoke();
         }
 
         private void OnPurchasesFetched(Orders orders)
@@ -251,7 +246,7 @@ namespace Core.Services.Purchasing
             bool isPremiumPurchasedOld = IsPremiumPurchased();
             
             // Sync subscriptions
-            foreach (var purchasedProductInfo in orders.PendingOrders.SelectMany(i => i.Info.PurchasedProductInfo))
+            foreach (var purchasedProductInfo in orders.ConfirmedOrders.SelectMany(i => i.Info.PurchasedProductInfo))
             {
                 if (purchasedProductInfo.subscriptionInfo == null)
                     continue;
@@ -280,6 +275,12 @@ namespace Core.Services.Purchasing
                         }
                     }
                 }
+            }
+            
+            if (IsInitialized == false)
+            {
+                _callbacks.Initialized?.Invoke();
+                StoreSync(_subscriptionStoreSyncTime);
             }
             
             if (IsPremiumPurchased() && isPremiumPurchasedOld == false)
